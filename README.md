@@ -72,14 +72,6 @@ Includes:
 | `deepseek/deepseek-r1-0528:free`    | free |
 | `deepseek/deepseek-v3-base:free`    | free |
 
-## 📝 License
 
-This project is released under the [MIT License](LICENSE).
-
----
-
-Built with ❤️ for ComfyUI by [Vkabuto23](https://github.com/Vkabuto23/)
-
-```
 ::contentReference[oaicite:0]{index=0}
 ```
