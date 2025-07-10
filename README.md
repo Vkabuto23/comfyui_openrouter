@@ -1,4 +1,4 @@
-````markdown
+
 # ComfyUI OpenRouter Nodes
 
 A set of custom ComfyUI nodes for talking to the [OpenRouter](https://openrouter.ai/) API.  
@@ -21,7 +21,7 @@ Includes:
 2. Make sure you have these Python packages installed in the same environment as ComfyUI:
    ```bash
    pip install pillow numpy
-````
+
 
 3. Restart ComfyUI.
 4. In the node graph, find the **OpenRouter** category — your nodes (`OpenRouterNode` and `OpenRouterVisionNode`) will be there.
