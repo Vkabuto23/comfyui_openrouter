@@ -1,4 +1,6 @@
+# noinspection PyPep8Naming
 import urllib.request
+import urllib.error
 import json
 import io
 import base64
@@ -7,7 +9,6 @@ import logging
 from PIL import Image
 import numpy as np
 
-# Логгер для Vision ноды
 logger = logging.getLogger("OpenRouterVisionNode")
 logger.setLevel(logging.DEBUG)
 
@@ -21,6 +22,10 @@ class OpenRouterVisionNode:
                 "system_prompt": ("STRING", {"multiline": True}),
                 "user_prompt":   ("STRING", {"multiline": True}),
                 "img":           ("IMAGE",  {}),
+            },
+            "optional": {
+                # new parameter!
+                "max_tokens": ("INT", {"default": 1024}),
             }
         }
 
@@ -29,94 +34,99 @@ class OpenRouterVisionNode:
     FUNCTION     = "call_openrouter"
     CATEGORY     = "OpenRouter"
 
-    def _to_pil(self, img):
-        # Если это уже PIL
+    @staticmethod
+    def _to_pil(img):
+        """Convert tensor/ndarray to PIL.Image."""
         if isinstance(img, Image.Image):
             return img
 
-        # Иначе получаем numpy
         if hasattr(img, "cpu"):
             arr = img.cpu().detach().numpy()
         else:
             arr = np.array(img)
         arr = np.squeeze(arr)
 
-        # Float → uint8
         if np.issubdtype(arr.dtype, np.floating):
             arr = (arr * 255).clip(0, 255).astype(np.uint8)
 
-        # Каналы-first → last
-        if arr.ndim == 3 and arr.shape[0] in (1,3,4):
-            arr = np.transpose(arr, (1,2,0))
+        if arr.ndim == 3 and arr.shape[0] in (1, 3, 4):
+            arr = np.transpose(arr, (1, 2, 0))
 
-        # Определяем режим
         if arr.ndim == 3:
             ch = arr.shape[2]
-            mode = {1:"L",3:"RGB",4:"RGBA"}.get(ch)
+            mode = {1: "L", 3: "RGB", 4: "RGBA"}.get(ch)
             if mode is None:
                 raise TypeError(f"Unsupported channels: {ch}")
         elif arr.ndim == 2:
             mode = "L"
         else:
-            raise TypeError(f"Cannot handle shape {arr.shape}")
+            raise TypeError(f"Cannot handle shape: {arr.shape}")
 
         return Image.fromarray(arr, mode)
 
-    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, img):
-        # 1) Конвертируем в PIL
+    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, img, max_tokens=1024):
+        # 1) Convert to PIL
         try:
             pil = self._to_pil(img)
         except Exception as e:
             logger.error("Conversion to PIL failed", exc_info=True)
             return (f"Error converting image: {e}",)
 
-        # 2) Ресайз и кодинг
-        pil.thumbnail((512,512))
+        # 2) Resize & encode
+        pil.thumbnail((512, 512))
         buf = io.BytesIO()
         pil.save(buf, format="JPEG", quality=75)
         data_url = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+        logger.debug(f"[VisionNode] data_url length={len(data_url)}")
 
-        # 3) Структурированные сообщения (text + image_url)
+        # 3) Build structured messages
         messages = [
-            {"role":"system", "content":[{"type":"text","text":system_prompt}]},
-            {"role":"user",   "content":[
-                {"type":"text","text":user_prompt},
-                {"type":"image_url","image_url":{"url":data_url}}
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user",   "content": [
+                {"type": "text",      "text": user_prompt},
+                {"type": "image_url", "image_url": {"url": data_url}}
             ]}
         ]
-        payload = {"model":model_name,"messages":messages}
+        payload = {
+            "model":      model_name,
+            "messages":   messages,
+            "max_tokens": max_tokens,              # ← new field
+        }
         body = json.dumps(payload).encode("utf-8")
-        url  = "https://openrouter.ai/api/v1/chat/completions"
+
+        url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type":  "application/json"
         }
 
-        # 4) Три попытки
-        for attempt in range(1,4):
-            logger.info(f"OpenRouterVisionNode: Attempt {attempt}/3")
-            logger.debug(f"Posting to {url} (payload {len(body)} bytes)")
+        # 4) Up to 3 attempts
+        for attempt in range(1, 4):
+            logger.info(f"[VisionNode] Attempt {attempt}/3 (max_tokens={max_tokens})")
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
 
             try:
                 with urllib.request.urlopen(req) as resp:
-                    resp_json = json.loads(resp.read().decode("utf-8"))
-                    content = resp_json["choices"][0]["message"]["content"]
-                    logger.info(f"Received content length={len(content)}")
-                    return (content,)
+                    j = json.loads(resp.read().decode("utf-8"))
+                    text = j["choices"][0]["message"]["content"]
+                    logger.info(f"[VisionNode] Got content length={len(text)}")
+                    return (text,)
 
             except urllib.error.HTTPError as e:
                 err = f"HTTPError {e.code}: {e.reason}"
-                logger.warning(f"{err} on attempt {attempt}")
+                logger.warning(f"[VisionNode] {err} on attempt {attempt}")
                 if attempt == 3:
                     return (f"Error: {err}",)
 
             except Exception as e:
-                logger.warning(f"Exception on attempt {attempt}: {e}", exc_info=True)
+                logger.warning(f"[VisionNode] Exception on attempt {attempt}: {e}", exc_info=True)
                 if attempt == 3:
                     return (f"Error: {e}",)
 
-# Регистрация ноды
+        # fallback
+        return ("Error: exhausted retries",)
+
+# register node
 NODE_CLASS_MAPPINGS = {
     "OpenRouterVisionNode": OpenRouterVisionNode
 }
