@@ -1,4 +1,4 @@
-````markdown
+
 # ComfyUI Custom Nodes: OpenRouter & Ollama  
 Набор кастомных кастомных нод для ComfyUI, позволяющих работать с API OpenRouter и Ollama.
 
@@ -13,7 +13,7 @@
 2. Убедитесь, что в среде ComfyUI установлены нужные пакеты:  
    ```bash
    pip install pillow numpy
-````
+
 
 3. (Опционально) В корне `custom_nodes/` можно сделать `git clone` вашего репозитория, чтобы удобно подтягивать обновления:
 
