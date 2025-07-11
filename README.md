@@ -1,77 +1,120 @@
+````markdown
+# ComfyUI Custom Nodes: OpenRouter & Ollama  
+Набор кастомных кастомных нод для ComfyUI, позволяющих работать с API OpenRouter и Ollama.
 
-# ComfyUI OpenRouter Nodes
+Включает четыре ноды:  
+- **OpenRouterNode** — стандартные чат-комплишны (только текст)  
+- **OpenRouterVisionNode** — мультимодальные чат-комплишны (текст + изображение)  
+- **OllamaNode** — стандартные чат-комплишны через Ollama (только текст)  
+- **OllamaVisionNode** — мультимодальные чат-комплишны через Ollama (текст + изображение)  
 
-A set of custom ComfyUI nodes for talking to the [OpenRouter](https://openrouter.ai/) API.  
-Includes:
-
-- **OpenRouterNode** — standard chat completions (text-only)  
-- **OpenRouterVisionNode** — multimodal chat completions (text + image)
-
-## ✅ Features
-
-- Zero external dependencies beyond Python stdlib, Pillow & NumPy  
-- Built-in retry logic (up to 3 attempts) on HTTP/network errors  
-- Configurable `max_tokens` for output length  
-- Structured multimodal payload (sends image as `image_url`)  
-- Detailed console logging via Python `logging`  
-
-## ⚙️ Installation
-
-1. Copy the folder `comfyui_openrouter/` into your ComfyUI `custom_nodes/` directory.  
-2. Make sure you have these Python packages installed in the same environment as ComfyUI:
+⚙️ **Установка**  
+1. Скопируйте папку `comfyui_openrouter/` и файлы нод Ollama (`comfyui_ollama_node.py`, `comfyui_ollama_vision_node.py`) в ваш каталог `custom_nodes/` внутри ComfyUI.  
+2. Убедитесь, что в среде ComfyUI установлены нужные пакеты:  
    ```bash
    pip install pillow numpy
+````
 
+3. (Опционально) В корне `custom_nodes/` можно сделать `git clone` вашего репозитория, чтобы удобно подтягивать обновления:
 
-3. Restart ComfyUI.
-4. In the node graph, find the **OpenRouter** category — your nodes (`OpenRouterNode` and `OpenRouterVisionNode`) will be there.
+   ```bash
+   cd ComfyUI/custom_nodes
+   git clone https://github.com/Vkabuto23/comfyui_openrouter.git
+   ```
+4. Перезапустите ComfyUI.
+5. В графе нод появятся категории **OpenRouter** и **Ollama** с соответствующими нодами.
 
-## 🔑 Getting an API Key
+🔑 **API-ключ для OpenRouter**
 
-1. Sign up or log in at:
+1. Зарегистрируйтесь или войдите на:
    [https://openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
-2. Create or copy your **Bearer** API key.
-3. Paste it into the `api_key` input of each node.
+2. Создайте или скопируйте ваш Bearer API Key.
+3. Вставьте его в поле `api_key` у нод **OpenRouterNode** и **OpenRouterVisionNode**.
 
-## 🛠️ Usage
+📦 **Ollama Integration**
 
-### OpenRouterNode (Text-only)
+1. Скачайте и установите Ollama CLI для вашей ОС:
+   [https://ollama.com/#download](https://ollama.com/#download)
+2. Перейдите в терминал и подтяните модель `qwen2.5vl:7b`:
 
-* **Inputs**
+   ```bash
+   ollama pull qwen2.5vl:7b
+   ```
+3. Запустите HTTP-сервер Ollama (по умолчанию на `localhost:11434`):
 
-  * `api_key` (STRING) — your OpenRouter API key
-  * `model_name` (STRING) — e.g. `deepseek/deepseek-r1-0528:free`
-  * `system_prompt` (STRING)
-  * `user_prompt` (STRING)
+   ```bash
+   ollama serve
+   ```
+4. В нодах **OllamaNode** и **OllamaVisionNode** введите:
 
-* **Output**
+   * `ip_port`: `localhost:11434`
+   * `model_name`: `qwen2.5vl:7b`
 
-  * `response` (STRING) — the generated text
+🛠️ **Использование**
 
-### OpenRouterVisionNode (Text + Image)
+### OpenRouterNode (текст)
 
-* **Inputs**
+**Входы**
 
-  * `api_key` (STRING)
-  * `model_name` (STRING)
-  * `system_prompt` (STRING)
-  * `user_prompt` (STRING)
-  * `img` (IMAGE) — any Pillow-compatible image or tensor
-  * `max_tokens` (INT, optional, default=1024) — max tokens for the reply
+* `api_key` (STRING) — ваш OpenRouter API Key
+* `model_name` (STRING) — например, `deepseek/deepseek-r1-0528:free`
+* `system_prompt` (STRING)
+* `user_prompt` (STRING)
 
-* **Output**
+**Выход**
 
-  * `response` (STRING)
+* `response` (STRING)
 
-## 🎁 Free Models List
+### OpenRouterVisionNode (текст + изображение)
 
-| Model Name                          | Tag  |
+**Входы**
+
+* `api_key` (STRING)
+* `model_name` (STRING)
+* `system_prompt` (STRING)
+* `user_prompt` (STRING)
+* `img` (IMAGE) — любое изображение Pillow или тензор
+* `max_tokens` (INT, по умолчанию 1024)
+
+**Выход**
+
+* `response` (STRING)
+
+### OllamaNode (текст)
+
+**Входы**
+
+* `ip_port` (STRING) — например, `localhost:11434`
+* `model_name` (STRING) — `qwen2.5vl:7b`
+* `system_prompt` (STRING)
+* `user_prompt` (STRING)
+
+**Выход**
+
+* `response` (STRING)
+
+### OllamaVisionNode (текст + изображение)
+
+**Входы**
+
+* `ip_port` (STRING)
+* `model_name` (STRING)
+* `system_prompt` (STRING)
+* `user_prompt` (STRING)
+* `img` (IMAGE)
+* `max_tokens` (INT, по умолчанию 1024)
+
+**Выход**
+
+* `response` (STRING)
+
+🎁 **Список бесплатных моделей OpenRouter**
+
+| Модель                              | Тег  |
 | ----------------------------------- | ---- |
 | `qwen/qwen2.5-vl-32b-instruct:free` | free |
 | `qwen/qwen2.5-vl-72b-instruct:free` | free |
 | `deepseek/deepseek-r1-0528:free`    | free |
 | `deepseek/deepseek-v3-base:free`    | free |
 
-
-::contentReference[oaicite:0]{index=0}
-```
+---
