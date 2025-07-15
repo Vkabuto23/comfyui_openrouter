@@ -60,6 +60,7 @@
 * `model_name` (STRING) — например, `deepseek/deepseek-r1-0528:free`
 * `system_prompt` (STRING)
 * `user_prompt` (STRING)
+* `temperature` (FLOAT, по умолчанию 0.7)
 
 **Выход**
 
@@ -75,6 +76,7 @@
 * `user_prompt` (STRING)
 * `img` (IMAGE) — любое изображение Pillow или тензор
 * `max_tokens` (INT, по умолчанию 1024)
+* `temperature` (FLOAT, по умолчанию 0.7)
 
 **Выход**
 
@@ -88,6 +90,7 @@
 * `model_name` (STRING) — `qwen2.5vl:7b`
 * `system_prompt` (STRING)
 * `user_prompt` (STRING)
+* `temperature` (FLOAT, по умолчанию 0.7)
 
 **Выход**
 
@@ -103,6 +106,7 @@
 * `user_prompt` (STRING)
 * `img` (IMAGE)
 * `max_tokens` (INT, по умолчанию 1024)
+* `temperature` (FLOAT, по умолчанию 0.7)
 
 **Выход**
 

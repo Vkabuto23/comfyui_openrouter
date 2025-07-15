@@ -17,6 +17,9 @@ class OllamaNode:
                 "model_name":    ("STRING", {"multiline": False}),
                 "system_prompt": ("STRING", {"multiline": True}),
                 "user_prompt":   ("STRING", {"multiline": True}),
+            },
+            "optional": {
+                "temperature": ("FLOAT", {"default": 0.7}),
             }
         }
 
@@ -25,7 +28,7 @@ class OllamaNode:
     FUNCTION     = "call_ollama"
     CATEGORY     = "Ollama"
 
-    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt):
+    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, temperature=0.7):
         url = f"http://{ip_port}/v1/chat/completions"
         headers = {
             "Content-Type":  "application/json",
@@ -35,12 +38,13 @@ class OllamaNode:
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt}
-            ]
+            ],
+            "options": {"temperature": temperature},
         }
         data = json.dumps(payload).encode("utf-8")
 
         for attempt in range(1, 4):
-            logger.info(f"OllamaNode: Attempt {attempt}/3")
+            logger.info(f"OllamaNode: Attempt {attempt}/3 (temperature={temperature})")
             logger.debug(f"OllamaNode: POST {url} (payload {len(data)} bytes)")
 
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")

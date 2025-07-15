@@ -26,6 +26,7 @@ class OpenRouterVisionNode:
             "optional": {
                 # new parameter!
                 "max_tokens": ("INT", {"default": 1024}),
+                "temperature": ("FLOAT", {"default": 0.7}),
             }
         }
 
@@ -64,7 +65,7 @@ class OpenRouterVisionNode:
 
         return Image.fromarray(arr, mode)
 
-    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, img, max_tokens=1024):
+    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, img, max_tokens=1024, temperature=0.7):
         # 1) Convert to PIL
         try:
             pil = self._to_pil(img)
@@ -91,6 +92,7 @@ class OpenRouterVisionNode:
             "model":      model_name,
             "messages":   messages,
             "max_tokens": max_tokens,              # ← new field
+            "temperature": temperature,
         }
         body = json.dumps(payload).encode("utf-8")
 
@@ -102,7 +104,7 @@ class OpenRouterVisionNode:
 
         # 4) Up to 3 attempts
         for attempt in range(1, 4):
-            logger.info(f"[VisionNode] Attempt {attempt}/3 (max_tokens={max_tokens})")
+            logger.info(f"[VisionNode] Attempt {attempt}/3 (max_tokens={max_tokens}, temperature={temperature})")
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
 
             try:

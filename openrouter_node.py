@@ -16,6 +16,10 @@ class OpenRouterNode:
                 "system_prompt": ("STRING", {"multiline": True}),
                 "user_prompt":   ("STRING", {"multiline": True}),
             }
+            ,
+            "optional": {
+                "temperature": ("FLOAT", {"default": 0.7}),
+            }
         }
 
     RETURN_TYPES = ("STRING",)
@@ -23,7 +27,7 @@ class OpenRouterNode:
     FUNCTION     = "call_openrouter"
     CATEGORY     = "OpenRouter"
 
-    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt):
+    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, temperature=0.7):
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -34,7 +38,8 @@ class OpenRouterNode:
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt}
-            ]
+            ],
+            "temperature": temperature,
         }
         data = json.dumps(payload).encode("utf-8")
 
