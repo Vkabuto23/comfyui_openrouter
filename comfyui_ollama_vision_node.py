@@ -26,6 +26,7 @@ class OllamaVisionNode:
             },
             "optional": {
                 "max_tokens": ("INT", {"default": 1024}),
+                "temperature": ("FLOAT", {"default": 0.7}),
             }
         }
 
@@ -58,7 +59,7 @@ class OllamaVisionNode:
             raise TypeError(f"Cannot handle shape: {arr.shape}")
         return Image.fromarray(arr, mode)
 
-    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, img, max_tokens=1024):
+    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, img, max_tokens=1024, temperature=0.7):
         try:
             pil = self._to_pil(img)
         except Exception as e:
@@ -82,6 +83,7 @@ class OllamaVisionNode:
             "model":      model_name,
             "messages":   messages,
             "max_tokens": max_tokens,
+            "options": {"temperature": temperature},
         }
         body = json.dumps(payload).encode("utf-8")
 
@@ -89,7 +91,7 @@ class OllamaVisionNode:
         headers = {"Content-Type": "application/json"}
 
         for attempt in range(1, 4):
-            logger.info(f"OllamaVisionNode: Attempt {attempt}/3 (max_tokens={max_tokens})")
+            logger.info(f"OllamaVisionNode: Attempt {attempt}/3 (max_tokens={max_tokens}, temperature={temperature})")
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
             try:
                 with urllib.request.urlopen(req) as resp:
