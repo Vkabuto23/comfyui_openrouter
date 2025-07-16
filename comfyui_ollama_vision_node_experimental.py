@@ -61,6 +61,18 @@ class OllamaVisionNodeExperimental:
             raise TypeError(f"Cannot handle shape: {arr.shape}")
         return Image.fromarray(arr, mode)
 
+    @staticmethod
+    def _stop_model(ip_port, model_name):
+        url = f"http://{ip_port}/api/stop"
+        headers = {"Content-Type": "application/json"}
+        body = json.dumps({"name": model_name}).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        try:
+            urllib.request.urlopen(req)
+            logger.info(f"OllamaVisionNode: Stopped model {model_name}")
+        except Exception as e:
+            logger.warning(f"OllamaVisionNode: Failed to stop model {model_name}: {e}")
+
     def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, img,
                     max_tokens=1024, temperature=0.7, top_p=0.9, hold_model=True):
         try:
@@ -119,6 +131,9 @@ class OllamaVisionNodeExperimental:
                 logger.warning(f"OllamaVisionNode: Exception on attempt {attempt}: {e}", exc_info=True)
                 if attempt == 3:
                     return (f"Error: {e}",)
+            finally:
+                if not hold_model:
+                    self._stop_model(ip_port, model_name)
         return ("Error: exhausted retries",)
 
 # Регистрация ноды
