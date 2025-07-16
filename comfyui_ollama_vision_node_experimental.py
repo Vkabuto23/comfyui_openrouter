@@ -10,10 +10,10 @@ import logging
 from PIL import Image
 import numpy as np
 
-logger = logging.getLogger("OllamaVisionNode")
+logger = logging.getLogger("OllamaVisionNodeExperimental")
 logger.setLevel(logging.DEBUG)
 
-class OllamaVisionNode:
+class OllamaVisionNodeExperimental:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -25,7 +25,9 @@ class OllamaVisionNode:
                 "img":           ("IMAGE",  {}),
             },
             "optional": {
-                "max_tokens": ("INT", {"default": 1024}),
+                "max_tokens":  ("INT",   {"default": 1024}),
+                "temperature": ("FLOAT", {"default": 0.7}),
+                "top_p":       ("FLOAT", {"default": 0.9}),
             }
         }
 
@@ -58,7 +60,8 @@ class OllamaVisionNode:
             raise TypeError(f"Cannot handle shape: {arr.shape}")
         return Image.fromarray(arr, mode)
 
-    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, img, max_tokens=1024):
+    def call_ollama(self, ip_port, model_name, system_prompt, user_prompt, img,
+                    max_tokens=1024, temperature=0.7, top_p=0.9):
         try:
             pil = self._to_pil(img)
         except Exception as e:
@@ -81,7 +84,11 @@ class OllamaVisionNode:
         payload = {
             "model":      model_name,
             "messages":   messages,
-            "max_tokens": max_tokens,
+            "options": {
+                "num_predict": max_tokens,
+                "temperature": temperature,
+                "top_p":       top_p,
+            }
         }
         body = json.dumps(payload).encode("utf-8")
 
@@ -89,7 +96,10 @@ class OllamaVisionNode:
         headers = {"Content-Type": "application/json"}
 
         for attempt in range(1, 4):
-            logger.info(f"OllamaVisionNode: Attempt {attempt}/3 (max_tokens={max_tokens})")
+            logger.info(
+                f"OllamaVisionExperimental: Attempt {attempt}/3 "
+                f"(max_tokens={max_tokens}, temperature={temperature}, top_p={top_p})"
+            )
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
             try:
                 with urllib.request.urlopen(req) as resp:
@@ -110,5 +120,5 @@ class OllamaVisionNode:
 
 # Регистрация ноды
 NODE_CLASS_MAPPINGS = {
-    "OllamaVisionNode": OllamaVisionNode
+    "OllamaVisionNodeExperimental": OllamaVisionNodeExperimental
 }
