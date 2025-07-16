@@ -9,10 +9,10 @@ import logging
 from PIL import Image
 import numpy as np
 
-logger = logging.getLogger("OpenRouterVisionNode")
+logger = logging.getLogger("OpenRouterVisionNodeExperimental")
 logger.setLevel(logging.DEBUG)
 
-class OpenRouterVisionNode:
+class OpenRouterVisionNodeExperimental:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -24,8 +24,9 @@ class OpenRouterVisionNode:
                 "img":           ("IMAGE",  {}),
             },
             "optional": {
-                # new parameter!
-                "max_tokens": ("INT", {"default": 1024}),
+                "max_tokens":  ("INT",   {"default": 1024}),
+                "temperature": ("FLOAT", {"default": 0.7}),
+                "top_p":       ("FLOAT", {"default": 0.9}),
             }
         }
 
@@ -64,7 +65,8 @@ class OpenRouterVisionNode:
 
         return Image.fromarray(arr, mode)
 
-    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt, img, max_tokens=1024):
+    def call_openrouter(self, api_key, model_name, system_prompt, user_prompt,
+                        img, max_tokens=1024, temperature=0.7, top_p=0.9):
         # 1) Convert to PIL
         try:
             pil = self._to_pil(img)
@@ -90,7 +92,9 @@ class OpenRouterVisionNode:
         payload = {
             "model":      model_name,
             "messages":   messages,
-            "max_tokens": max_tokens,              # ← new field
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "top_p":       top_p,
         }
         body = json.dumps(payload).encode("utf-8")
 
@@ -102,7 +106,10 @@ class OpenRouterVisionNode:
 
         # 4) Up to 3 attempts
         for attempt in range(1, 4):
-            logger.info(f"[VisionNode] Attempt {attempt}/3 (max_tokens={max_tokens})")
+            logger.info(
+                f"[VisionNodeExperimental] Attempt {attempt}/3 "
+                f"(max_tokens={max_tokens}, temperature={temperature}, top_p={top_p})"
+            )
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
 
             try:
@@ -128,5 +135,5 @@ class OpenRouterVisionNode:
 
 # register node
 NODE_CLASS_MAPPINGS = {
-    "OpenRouterVisionNode": OpenRouterVisionNode
+    "OpenRouterVisionNodeExperimental": OpenRouterVisionNodeExperimental
 }
