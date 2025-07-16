@@ -22,6 +22,7 @@ class OllamaNodeExperimental:
                 "max_tokens":  ("INT",   {"default": 1024}),
                 "temperature": ("FLOAT", {"default": 0.7}),
                 "top_p":       ("FLOAT", {"default": 0.9}),
+                "hold_model":  ("BOOLEAN", {"default": True, "label": "Hold model"}),
             }
         }
 
@@ -31,7 +32,7 @@ class OllamaNodeExperimental:
     CATEGORY     = "Ollama"
 
     def call_ollama(self, ip_port, model_name, system_prompt, user_prompt,
-                    max_tokens=1024, temperature=0.7, top_p=0.9):
+                    max_tokens=1024, temperature=0.7, top_p=0.9, hold_model=True):
         url = f"http://{ip_port}/v1/chat/completions"
         headers = {
             "Content-Type":  "application/json",
@@ -48,6 +49,8 @@ class OllamaNodeExperimental:
                 "top_p":       top_p,
             }
         }
+        if not hold_model:
+            payload["options"]["keep_alive"] = 0
         data = json.dumps(payload).encode("utf-8")
 
         for attempt in range(1, 4):
